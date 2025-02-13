@@ -7,9 +7,11 @@ import {
   Avatars,
   Query,
   Storage,
+  Teams,
 } from "react-native-appwrite";
 import * as Linking from "expo-linking";
 import { openAuthSessionAsync } from "expo-web-browser";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const config = {
   platform: "com.realstate.dreamhouse",
@@ -25,6 +27,8 @@ export const config = {
   propertiesCollectionId:
     process.env.EXPO_PUBLIC_APPWRITE_PROPERTIES_COLLECTION_ID,
   bucketId: process.env.EXPO_PUBLIC_APPWRITE_BUCKET_ID,
+  adminTeamId: process.env.EXPO_PUBLIC_APPWRITE_ADMIN_TEAM_ID,
+  usersTeamId: process.env.EXPO_PUBLIC_APPWRITE_USER_TEAM_ID,
 };
 
 export const client = new Client();
@@ -37,6 +41,7 @@ export const avatar = new Avatars(client);
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
+export const teams = new Teams(client);
 
 export async function login() {
   try {
@@ -63,12 +68,33 @@ export async function login() {
     const session = await account.createSession(userId, secret);
     if (!session) throw new Error("Failed to create session");
 
-    return true;
+    // ✅ Get user info
+    const user = await account.get();
+
+    // ✅ Fetch user's teams
+    const userTeams = await teams.list();
+
+    // ✅ Check user role
+    const isAdmin = userTeams.teams.some(
+      (team) => team.$id === config.adminTeamId
+    );
+
+    // ✅ Save role and user info to AsyncStorage
+    await AsyncStorage.setItem("userRole", isAdmin ? "admin" : "user");
+    await AsyncStorage.setItem("userId", user.$id);
+    await AsyncStorage.setItem("userEmail", user.email);
+
+    return { success: true, isAdmin };
   } catch (error) {
     console.error(error);
-    return false;
+    return { success: false };
   }
 }
+
+export const getUserRole = async () => {
+  const role = await AsyncStorage.getItem("userRole");
+  return role === "admin";
+};
 
 export async function logout() {
   try {
@@ -121,7 +147,6 @@ export const fetchingAddProperties = async () => {
     return [];
   }
 };
-
 
 export async function fetchingAddPropertiesById({ id }: { id: string }) {
   try {

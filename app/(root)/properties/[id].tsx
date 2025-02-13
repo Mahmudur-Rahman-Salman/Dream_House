@@ -348,9 +348,9 @@ const Property = () => {
             <Text className="text-sm font-rubik-bold bg-primary-100 px-4 py-2 rounded-full text-primary-300">
               {property?.type}
             </Text>
-            <Text className="text-black-200 text-sm font-rubik-medium">
+            {/* <Text className="text-black-200 text-sm font-rubik-medium">
               {property?.rating} ({property?.reviews?.length} reviews)
-            </Text>
+            </Text> */}
           </View>
         </View>
 
