@@ -15,6 +15,8 @@ import { useGlobalContext } from "@/lib/global-provider";
 import icons from "@/constants/icons";
 import { settings } from "@/constants/data";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface SettingsItemProp {
   icon: ImageSourcePropType;
@@ -49,6 +51,21 @@ const SettingsItem = ({
 const Profile = () => {
   const { user, refetch } = useGlobalContext();
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkRole = async () => {
+      const role = await AsyncStorage.getItem("userRole");
+      console.log("user role : ", role); 
+      setIsAdmin(role === "admin");
+      setLoading(false);
+    };
+    checkRole();
+  }, []);
+
+  if (loading) return null;
+
   const handleLogout = async () => {
     const result = await logout();
     if (result) {
@@ -69,7 +86,6 @@ const Profile = () => {
           <Text className="text-xl font-rubik-bold">Profile</Text>
           <Image source={icons.bell} className="size-5" />
         </View>
-
         <View className="flex flex-row justify-center mt-5">
           <View className="flex flex-col items-center relative mt-5">
             <Image
@@ -89,7 +105,7 @@ const Profile = () => {
           </Text>
         </View>
 
-        <View className="flex flex-col mt-10">
+       { isAdmin && <View className="flex flex-col mt-10">
           <TouchableOpacity
             onPress={() => router.push("/dashboard/Add")}
             className="flex flex-row items-center justify-between py-3"
@@ -103,8 +119,7 @@ const Profile = () => {
 
             <Image source={icons.rightArrow} className="size-5" />
           </TouchableOpacity>
-        </View>
-
+        </View>}
         <View className="flex flex-col border-t mt-5 pt-5 border-primary-200">
           <SettingsItem
             icon={icons.logout}
